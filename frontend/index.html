@@ -1,39 +1,39 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>INFERNO.exe</title>
+  <meta name="theme-color" content="#090d12">
+  <meta name="description" content="The Blackout: restore power in a five-minute cybersecurity escape room.">
+  <title>The Blackout | Cybersecurity Escape Room</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
   <main>
     <header>
-      <span class="eyebrow">INFOSEC // INCIDENT RESPONSE SIMULATION</span>
-      <h1>INFERNO<em>.exe</em></h1>
-      <p>Restore the compromised AI system before lockdown.</p>
+      <div class="masthead"><span class="eyebrow">OPEN HOUSE // CYBERSECURITY ESCAPE ROOM</span><span class="signal" id="power-status">POWER OFFLINE</span></div>
+      <h1>THE <span>BLACKOUT</span></h1>
+      <p>A malicious instruction. A compromised AI. Five minutes to bring the power back.</p>
     </header>
-
-    <div class="status">
-      <span id="stage">MISSION NOT STARTED</span>
-      <strong id="timer">12:00</strong>
+    <div class="status" aria-label="Mission status">
+      <div><span class="eyebrow">EMERGENCY RESTORATION</span><p id="stage">AWAITING RESPONSE TEAM</p></div>
+      <div class="clock"><span>TIME REMAINING</span><strong id="timer" role="timer" aria-label="Time remaining">05:00</strong></div>
     </div>
-
-    <section id="screen">
-      <h2>Ready, analyst?</h2>
-      <p>You have 12 minutes to solve four connected challenges.</p>
-      <button id="start">Start mission</button>
+    <ol class="progress" aria-label="Mission stages">
+      <li data-stage="1"><span>01</span> Crack the Code <small>~1 MIN</small></li>
+      <li data-stage="2"><span>02</span> The Corrupted AI <small>~2 MIN</small></li>
+      <li data-stage="3"><span>03</span> Emergency Override <small>~1 MIN</small></li>
+    </ol>
+    <section id="screen" aria-labelledby="screen-title">
+      <span class="eyebrow">INCIDENT BRIEF // ALL EXPERIENCE LEVELS</span>
+      <h2 id="screen-title" tabindex="-1">The lights are out.<br>You're the response team.</h2>
+      <p>An AI controller has followed a malicious instruction and locked the power system. Decode the access message, investigate the files, and choose a safe recovery action.</p>
+      <p class="muted">Three stages. One shared five-minute countdown, including a minute of breathing room for reading and transitions. The clock starts when you begin.</p>
+      <button id="start">Begin mission <span aria-hidden="true">→</span></button>
     </section>
-
-    <p id="notice" aria-live="polite"></p>
-
-    <footer>
-      Safe simulation • No real shell commands • Offline scripted AI
-    </footer>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <footer><span>THE BLACKOUT / OPEN HOUSE EDITION</span><span>5 MINUTES · 3 STAGES · ONE MISSION</span></footer>
   </main>
-
   <script src="app.js"></script>
 </body>
 </html>

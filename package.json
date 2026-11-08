@@ -1,8 +1,8 @@
 {
-  "name": "inferno.exe",
+  "name": "the-blackout",
   "version": "1.0.0",
   "private": true,
-  "description": "InfoSec escape room full-stack starter",
+  "description": "The Blackout: a three-stage, five-minute cybersecurity escape room",
   "scripts": {"start": "node backend/server.js", "dev": "node --watch backend/server.js", "test": "node --test"},
   "dependencies": {"express": "^4.21.2"},
   "engines": {"node": ">=18"}
