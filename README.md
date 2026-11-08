@@ -1,4 +1,4 @@
-# Project: Zero Day — Working full-stack starter
+# Inferno.exe — Working full-stack starter
 
 A four-stage InfoSec escape room prototype. **Frontend:** HTML/CSS/vanilla JavaScript. **Middleware:** Express request validation and session checks. **Backend:** Node.js + Express routes, puzzle engine, and safe virtual Linux simulation.
 
