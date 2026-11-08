@@ -1,0 +1,11 @@
+const express = require('express');
+const path = require('node:path');
+const app = express();
+app.disable('x-powered-by');
+app.use(express.json({ limit: '8kb' }));
+app.use('/api', require('./routes/game'));
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html')));
+const port = process.env.PORT || 3000;
+if (require.main === module) app.listen(port, () => console.log(`Project: Zero Day running at http://localhost:${port}`));
+module.exports = app;
