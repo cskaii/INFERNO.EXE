@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
 const port = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(port, () => {
-    console.log(`INFERNO.exe running at http://localhost:${port}`);
+    console.log(`The Blackout running at http://localhost:${port}`);
   });
 }
 module.exports = app;
