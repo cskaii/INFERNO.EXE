@@ -293,3 +293,26 @@ summary { cursor: pointer; font: 12px/1.8 var(--mono); color: var(--cyan); }
 
 #wheel .wheel-marker { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
 #wheel-feedback { padding: 11px 13px; border-left: 2px solid var(--cyan); background: #66dce50b; color: #d1f5fa; font: 12px/1.8 var(--mono); }
+
+/* Raised metal cipher instrument; labels remain flat and readable. */
+.cipher-layout { gap: 32px; flex-wrap: wrap; }
+#wheel { width: 420px; max-width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 14px 10px #0009) drop-shadow(0 0 18px #66dce514); }
+#wheel .wheel-depth { fill: #02070c; stroke: #02070c; stroke-width: 3; }
+#wheel .wheel-rim { fill: url(#wheel-metal); stroke: #91aab7; stroke-width: 1; }
+#wheel .wheel-face { fill: url(#wheel-face); stroke: #080f17; stroke-width: 2; }
+#wheel .wheel-recess { fill: #020910; stroke: #020910; stroke-width: 3; }
+#wheel .wheel-inner-face { fill: url(#wheel-face); stroke: #769eac; stroke-width: .7; }
+#wheel .wheel-hub { fill: url(#wheel-hub); stroke: #71929e; stroke-width: 1; }
+#wheel .wheel-tick { stroke: #96b6c2; stroke-width: .65; opacity: .65; }
+#wheel text { paint-order: stroke fill; stroke: #0009; stroke-width: .7px; }
+#wheel .encoded { fill: #f0f6fa; }
+#wheel .decoded { fill: #ffda8d; }
+.cell { font-size: 11px; padding: 11px 7px; }
+@media (max-width: 650px) {
+  #wheel { width: min(420px, 100%); }
+  .cipher-layout { gap: 24px; }
+}
+@media (forced-colors: active) {
+  #wheel circle { fill: Canvas; stroke: CanvasText; }
+  #wheel text { fill: CanvasText; stroke: none; }
+}
