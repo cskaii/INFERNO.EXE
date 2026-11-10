@@ -87,14 +87,14 @@ function render() {
     return;
   }
   if (state.stage === 1) {
-    screen.innerHTML = '<span class="eyebrow">STAGE 01 // TARGET: 1 MINUTE</span><h2 id="screen-title" tabindex="-1">Crack the Code</h2><p>Decode the intercepted access phrase. The encoder settings survived on the backup panel; use them to calibrate the cipher wheel.</p><div class="cipher-message" id="cipher-message"></div><div class="backup-panel"><span class="eyebrow">BACKUP PANEL / ENCODER MEMORY</span><p>Direction: FORWARD &nbsp;|&nbsp; Key: number of FAILED cells</p><div id="backup-cells" class="backup-cells" role="group" aria-label="Backup cell status"></div></div><div class="cipher-layout"><svg id="wheel" viewBox="0 0 300 300" role="img" aria-label="Adjustable Caesar wheel: outer ring is encrypted; inner ring is decoded"></svg><div class="wheel-controls"><label for="wheel-shift">Wheel offset</label><select id="wheel-shift" aria-describedby="wheel-feedback wheel-instructions"></select><p id="wheel-feedback" role="status" aria-live="polite"></p><p class="muted" id="wheel-instructions">Match each intercepted letter on the outer ring to the inner letter directly beneath it. Enter both decoded words below, then select Unlock system.</p><details class="wheel-table"><summary>View letter pairs as text</summary><p id="wheel-pairs"></p></details></div></div><form id="decode"><label for="answer">Decoded access phrase</label><div class="input-row"><input id="answer" maxlength="150" autocomplete="off" placeholder="Enter both decoded words" required><button>Unlock system &rarr;</button></div></form>';
+    screen.innerHTML = '<span class="eyebrow">STAGE 01 // TARGET: 1 MINUTE</span><h2 id="screen-title" tabindex="-1">Crack the Code</h2><p>Decode the intercepted access phrase. The encoder settings survived on the backup panel; use them to calibrate the cipher wheel.</p><div class="cipher-message" id="cipher-message"></div><div class="backup-panel"><span class="eyebrow">BACKUP PANEL / ENCODER MEMORY</span><p>Encryption direction: FORWARD<br>Cipher key: count the cells marked FAILED. Cell numbers are identifiers, not the key.</p><div id="backup-cells" class="backup-cells" role="group" aria-label="Backup cell status"></div></div><div class="cipher-layout"><svg id="wheel" viewBox="0 0 300 300" role="img" aria-label="Adjustable Caesar wheel: outer ring is encrypted; inner ring is decoded"></svg><div class="wheel-controls"><label for="wheel-shift">Wheel offset</label><select id="wheel-shift" aria-describedby="wheel-feedback wheel-instructions"></select><p id="wheel-feedback" role="status" aria-live="polite"></p><p class="muted" id="wheel-instructions">Match each intercepted letter on the outer ring to the inner letter directly beneath it. Enter both decoded words below, then select Unlock system.</p><details class="wheel-table"><summary>View letter pairs as text</summary><p id="wheel-pairs"></p></details></div></div><form id="decode"><label for="answer">Decoded access phrase</label><div class="input-row"><input id="answer" maxlength="150" autocomplete="off" placeholder="Enter both decoded words" required><button>Unlock system &rarr;</button></div></form>';
     document.querySelector('#cipher-message').textContent = state.cipher.message;
     const cells = document.querySelector('#backup-cells');
     for (let i = 0; i < 8; i++) {
       const cell = document.createElement('span');
       const failed = i < state.cipher.failedCells;
       cell.className = failed ? 'cell failed' : 'cell online';
-      cell.textContent = String(i + 1).padStart(2, '0') + ' / ' + (failed ? 'FAILED' : 'ONLINE');
+      cell.textContent = 'Cell ' + String(i + 1).padStart(2, '0') + ': ' + (failed ? 'FAILED' : 'Working');
       cells.append(cell);
     }
     const control = document.querySelector('#wheel-shift');
@@ -187,11 +187,31 @@ function buildWheel() {
   svg.replaceChildren();
   const ns = 'http://www.w3.org/2000/svg';
   const rotation = wheelShift * 360 / 26;
-  [136, 102, 65].forEach(radius => {
+  const defs = document.createElementNS(ns, 'defs');
+  [['wheel-metal', '#718b99', '#102330'], ['wheel-face', '#294956', '#081620'], ['wheel-hub', '#3b5b68', '#09131d']].forEach(([id, light, dark]) => {
+    const gradient = document.createElementNS(ns, 'linearGradient');
+    Object.entries({ id, x1: '0%', y1: '0%', x2: '80%', y2: '100%' }).forEach(([key, value]) => gradient.setAttribute(key, value));
+    [['0%', light], ['45%', dark], ['85%', dark], ['100%', light]].forEach(([offset, color]) => {
+      const stop = document.createElementNS(ns, 'stop');
+      stop.setAttribute('offset', offset);
+      stop.setAttribute('stop-color', color);
+      gradient.append(stop);
+    });
+    defs.append(gradient);
+  });
+  svg.append(defs);
+  [[139, 154, 'wheel-depth'], [139, 150, 'wheel-rim'], [132, 150, 'wheel-face'], [103, 153, 'wheel-recess'], [101, 150, 'wheel-inner-face'], [66, 152, 'wheel-recess'], [64, 150, 'wheel-hub']].forEach(([radius, cy, className]) => {
     const circle = document.createElementNS(ns, 'circle');
-    Object.entries({ cx: 150, cy: 150, r: radius }).forEach(([key, value]) => circle.setAttribute(key, value));
+    Object.entries({ cx: 150, cy, r: radius, class: className }).forEach(([key, value]) => circle.setAttribute(key, value));
     svg.append(circle);
   });
+  for (let i = 0; i < 52; i++) {
+    const angle = (i * 360 / 52 - 90) * Math.PI / 180;
+    const tick = document.createElementNS(ns, 'line');
+    const inner = i % 2 ? 133 : 130;
+    Object.entries({ x1: 150 + inner * Math.cos(angle), y1: 150 + inner * Math.sin(angle), x2: 150 + 137 * Math.cos(angle), y2: 150 + 137 * Math.sin(angle), class: 'wheel-tick' }).forEach(([key, value]) => tick.setAttribute(key, value));
+    svg.append(tick);
+  }
   const innerRing = document.createElementNS(ns, 'g');
   innerRing.setAttribute('class', 'inner-ring');
   innerRing.setAttribute('transform', 'rotate(' + rotation + ' 150 150)');
@@ -231,3 +251,4 @@ function buildWheel() {
     ' selected. First letter: ' + intercepted + ' maps to ' + mapped + '. Decode the remaining letters and enter the phrase below.';
 }
 document.querySelector('#start').onclick = start;
+
