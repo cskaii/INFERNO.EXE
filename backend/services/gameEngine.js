@@ -1,4 +1,6 @@
 const crypto = require('node:crypto');
+const config = require('../config');
+const { QUESTIONS } = require('./aiService');
 const sessions = new Map();
 const DURATION_MS = 5 * 60 * 1000;
 const REQUIRED_FILES = ['incident.log', 'update.txt', 'recovery.txt'];
@@ -6,10 +8,13 @@ function encrypt(text, shift) {
   return text.replace(/[A-Z]/g, letter => String.fromCharCode(65 + (letter.charCodeAt(0) - 65 + shift) % 26));
 }
 function createSession() {
+  cleanupSessions();
+  if (sessions.size >= 1000) throw new Error('Session capacity reached');
   const id = crypto.randomUUID();
   sessions.set(id, {
     stage: 1, shift: crypto.randomInt(3, 8), startedAt: Date.now(),
-    finished: false, readFiles: [], hints: { 1: 0, 2: 0, 3: 0 }
+    finished: false, readFiles: [], hints: { 1: 0, 2: 0, 3: 0 },
+    hintMessages: {}, terminalHistory: [], aiHistory: [], aiRequests: 0, aiPending: false, aiLastAt: 0
   });
   return id;
 }
@@ -24,7 +29,14 @@ function publicState(s) {
     readFiles: [...s.readFiles],
     evidenceReady: REQUIRED_FILES.every(file => s.readFiles.includes(file)),
     cipher: { message: encrypt('RESTORE GRID', s.shift), failedCells: s.shift },
-    hintsUsed: Object.values(s.hints).reduce((sum, count) => sum + count, 0)
+    hintsUsed: Object.values(s.hints).reduce((sum, count) => sum + count, 0),
+    revealedHints: { ...s.hintMessages },
+    terminalHistory: s.terminalHistory.map(turn => ({ ...turn })),
+    ai: {
+      configured: Boolean(config.apiKey), questions: QUESTIONS,
+      remainingRequests: Math.max(0, config.sessionLimit - s.aiRequests),
+      pending: s.aiPending, history: s.aiHistory.map(turn => ({ ...turn }))
+    }
   };
 }
 function valid(s) { return Boolean(s && !s.finished && Date.now() - s.startedAt < DURATION_MS); }
@@ -68,6 +80,12 @@ function hint(s) {
   };
   const index = Math.min(s.hints[s.stage], 2);
   s.hints[s.stage] = Math.min(index + 1, 3);
+  s.hintMessages[s.stage] = { level: index + 1, total: 3, message: hints[s.stage][index] };
   return { ok: true, level: index + 1, total: 3, message: hints[s.stage][index], state: publicState(s) };
 }
-module.exports = { createSession, getSession, publicState, valid, answer, hint, encrypt, DURATION_MS };
+function cleanupSessions() {
+  const cutoff = Date.now() - 30 * 60 * 1000;
+  for (const [id, session] of sessions) if (session.startedAt < cutoff) sessions.delete(id);
+}
+setInterval(cleanupSessions, 60 * 1000).unref();
+module.exports = { createSession, getSession, publicState, valid, answer, hint, encrypt, DURATION_MS, cleanupSessions };
