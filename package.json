@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "The Blackout: a three-stage, five-minute cybersecurity escape room",
-  "scripts": {"start": "node backend/server.js", "dev": "node --watch backend/server.js", "test": "node --test"},
+  "scripts": {"start": "node backend/server.js", "dev": "node --watch backend/server.js", "test": "node --test test/backend.test.js"},
   "dependencies": {"express": "^4.21.2"},
-  "engines": {"node": ">=18"}
+  "engines": {"node": ">=22"}
 }

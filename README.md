@@ -3,7 +3,7 @@
 A three-stage cybersecurity escape room for an open house. Players restore a power system compromised by a malicious instruction targeting its AI controller.
 
 ## Run
-Requires Node.js 18+ and npm. Run these commands from the The-Blackout folder containing package.json.
+Requires Node.js 22+ and npm. Run these commands from the The-Blackout folder containing package.json.
 
 ~~~bash
 npm install
@@ -43,10 +43,19 @@ Explain afterwards that instructions hidden in untrusted content can manipulate 
 - backend/services/gameEngine.js - cipher generation, stage validation, staged hints and five-minute deadline.
 - backend/services/virtualLinux.js - safe simulated filesystem and commands.
 - backend/middleware/ - session checks and input validation.
-- test/game.test.js - mission flow, cipher, evidence, recovery, hints, expiry and API regression checks.
+- test/backend.test.js - backend mission flow, AI, session recovery, limits and error handling checks.
 
 ## Development notes
-- The AI incident is scripted and works offline after dependencies are installed. No live model or API key is configured.
+- The original terminal incident remains scripted. The new Stage 2 AI endpoint supports Gemini when configured and falls back to scripted dialogue. The frontend AI panel still needs to be connected.
 - The terminal never executes real operating-system commands.
 - Sessions are stored in memory and reset when the server restarts.
 - Answers and hint walkthroughs are kept on the server rather than embedded in the frontend.
+
+## Backend and Gemini integration
+
+See [Frontend tasks and API reference](docs/FRONTEND.md) for the API contract, frontend integration,
+session recovery and frontend testing instructions.
+
+Paste your private replacement Gemini key into .env beside package.json as GEMINI_API_KEY=...
+Real .env files are ignored by Git. On Render, use its Environment settings instead.
+The backend works with scripted controller replies until the key is configured.
