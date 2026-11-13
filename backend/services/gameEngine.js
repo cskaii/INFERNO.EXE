@@ -4,6 +4,8 @@ const { QUESTIONS } = require('./aiService');
 const sessions = new Map();
 const DURATION_MS = 5 * 60 * 1000;
 const REQUIRED_FILES = ['incident.log', 'update.txt', 'recovery.txt'];
+const PASSPHRASES = ['NIGHT SHIFT', 'LAST LIGHT', 'EYES OPEN', 'BACKUP ACCESS', 'SILENT ALARM', 'DARK SIGNAL'];
+let previousPhrase = null;
 function encrypt(text, shift) {
   return text.replace(/[A-Z]/g, letter => String.fromCharCode(65 + (letter.charCodeAt(0) - 65 + shift) % 26));
 }
@@ -11,8 +13,11 @@ function createSession() {
   cleanupSessions();
   if (sessions.size >= 1000) throw new Error('Session capacity reached');
   const id = crypto.randomUUID();
+  const choices = PASSPHRASES.filter(phrase => phrase !== previousPhrase);
+  const passphrase = choices[crypto.randomInt(choices.length)];
+  previousPhrase = passphrase;
   sessions.set(id, {
-    stage: 1, shift: crypto.randomInt(3, 8), startedAt: Date.now(),
+    stage: 1, passphrase, shift: crypto.randomInt(3, 8), startedAt: Date.now(),
     finished: false, readFiles: [], hints: { 1: 0, 2: 0, 3: 0 },
     hintMessages: {}, terminalHistory: [], aiHistory: [], aiRequests: 0, aiPending: false, aiLastAt: 0
   });
@@ -28,7 +33,7 @@ function publicState(s) {
     expired: !s.finished && elapsed >= DURATION_MS,
     readFiles: [...s.readFiles],
     evidenceReady: REQUIRED_FILES.every(file => s.readFiles.includes(file)),
-    cipher: { message: encrypt('RESTORE GRID', s.shift), failedCells: s.shift },
+    cipher: { message: encrypt(s.passphrase, s.shift), failedCells: s.shift },
     hintsUsed: Object.values(s.hints).reduce((sum, count) => sum + count, 0),
     revealedHints: { ...s.hintMessages },
     terminalHistory: s.terminalHistory.map(turn => ({ ...turn })),
@@ -48,7 +53,7 @@ function answer(s, stage, value) {
     return result(false, 'Evidence incomplete. Trace the controller event, inspect its source and locate the recovery inventory.');
   }
   const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  const correct = stage === 1 ? normalized === 'restore grid'
+  const correct = stage === 1 ? normalized === s.passphrase.toLowerCase()
     : stage === 2 ? normalized === 'prompt-injection:update.txt'
     : stage === 3 ? normalized === 'update.txt:b:enable-alerts' : false;
   if (!correct) return result(false, 'That combination does not match the evidence. Recheck the clues or request a hint.');
@@ -64,8 +69,8 @@ function hint(s) {
   const hints = {
     1: [
       'The dark cells on the backup panel give the key. Encryption moved forward; decoding must reverse it.',
-      'There are ' + shift + ' failed cells. Set the wheel to ' + shift + ' and read each outer letter as the inner letter. ' + encrypt('R', shift) + ' becomes R.',
-      'Walkthrough: set the wheel to ' + shift + ', then decode both words. The password is RESTORE GRID.'
+      'There are ' + shift + ' failed cells. Set the wheel to ' + shift + ' and read each outer letter as the inner letter. ' + encrypt(s.passphrase[0], shift) + ' becomes ' + s.passphrase[0] + '.',
+      'Walkthrough: set the wheel to ' + shift + ', then decode both words. The password is ' + s.passphrase + '.'
     ],
     2: [
       'Use ls, then cat incident.log. Follow the import entry rather than the harmless power-status report.',

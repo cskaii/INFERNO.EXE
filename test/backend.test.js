@@ -38,7 +38,7 @@ test('full existing mission works and evidence is required', async () => {
   const { id, s } = await session(app);
   assert.equal(game.publicState(s).remainingSeconds, 300);
   assert.equal((await request(app, '/answer', { stage: 3, value: 'update.txt:b:enable-alerts' }, id)).data.ok, false);
-  assert.equal((await request(app, '/answer', { stage: 1, value: 'RESTORE GRID' }, id)).data.state.stage, 2);
+  assert.equal((await request(app, '/answer', { stage: 1, value: s.passphrase }, id)).data.state.stage, 2);
   assert.equal((await request(app, '/answer', { stage: 2, value: 'prompt-injection:update.txt' }, id)).data.ok, false);
   for (const file of ['incident.log', 'update.txt', 'recovery.txt']) await request(app, '/terminal', { command: 'cat ' + file }, id);
   assert.equal((await request(app, '/answer', { stage: 2, value: 'prompt-injection:status.txt' }, id)).data.ok, false);
@@ -107,6 +107,28 @@ test('provider failures, blocked responses and empty replies fall back safely', 
     assert.ok(!JSON.stringify(reply).includes('private-provider-error'));
   }
 });
+test('Gemini 3 uses supported thinking settings without the legacy budget', async () => {
+  let body;
+  const ai = createAiService({ apiKey: 'test-key', model: 'gemini-3.8-flash', timeoutMs: 100 }, async (url, init) => {
+    body = JSON.parse(init.body);
+    return { ok: true, json: async () => ({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'Grid offline.' }] } }] }) };
+  });
+  assert.equal((await ai.respond('Status?', [])).mode, 'gemini');
+  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'LOW');
+  assert.equal(body.generationConfig.thinkingConfig.thinkingBudget, undefined);
+  assert.equal(body.generationConfig.temperature, undefined);
+});
+
+test('Flash Lite uses the minimal settings verified by the connection probe', async () => {
+  let body;
+  const ai = createAiService({ apiKey: 'test-key', model: 'gemini-3.1-flash-lite', timeoutMs: 100 }, async (url, init) => {
+    body = JSON.parse(init.body);
+    return { ok: true, json: async () => ({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'Grid offline.' }] } }] }) };
+  });
+  assert.equal((await ai.respond('Status?', [])).mode, 'gemini');
+  assert.deepEqual(body.generationConfig, { maxOutputTokens: 256 });
+});
+
 test('slow provider is aborted and produces fallback', async () => {
   const ai = createAiService({ apiKey: 'test', model: 'test', timeoutMs: 10 }, (url, init) => new Promise((resolve, reject) => {
     init.signal.addEventListener('abort', () => reject(Error('aborted')), { once: true });
@@ -184,4 +206,22 @@ test('cipher roundtrips, sessions expire from storage and shell is simulated', (
   assert.equal(game.getSession(id), undefined);
   assert.match(run('cat ../../package.json'), /not found/);
   assert.match(run('ls; whoami'), /not recognised/);
+});
+
+test('new teams get different phrases with matching ciphers, hints and validation', () => {
+  let previous;
+  for (let i = 0; i < 30; i++) {
+    const s = game.getSession(game.createSession());
+    assert.notEqual(s.passphrase, previous);
+    const initial = game.publicState(s);
+    assert.equal(game.encrypt(initial.cipher.message, 26 - initial.cipher.failedCells), s.passphrase);
+    assert.equal(Object.hasOwn(initial, 'passphrase'), false);
+    assert.equal(game.answer(s, 1, previous || 'RESTORE GRID').ok, false);
+    game.hint(s);
+    assert.ok(game.hint(s).message.includes(s.passphrase[0] + '.'));
+    assert.ok(game.hint(s).message.includes(s.passphrase));
+    assert.equal(game.answer(s, 1, '  ' + s.passphrase.toLowerCase().replace(' ', '   ') + '  ').ok, true);
+    assert.equal(s.stage, 2);
+    previous = s.passphrase;
+  }
 });

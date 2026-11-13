@@ -23,12 +23,12 @@ One server-enforced countdown starts when the team clicks Begin mission. Stage t
 
 Each stage has an optional hint button. First comes a nudge, then a specific clue, then a clearly labelled walkthrough. Hints have no additional time penalty; the shared countdown continues. They do not auto-submit answers or unlock stages. The completed mission shows how many hints were revealed.
 
-Wrong answers allow retries without extra time penalties or revealing which component was correct. Players can review the full collected terminal transcript in Stage 3. Both end screens allow a fresh mission for the next team, resetting hints and selecting a new random Caesar offset (3-7; the same key can recur).
+Wrong answers allow retries without extra time penalties or revealing which component was correct. Players can review the full collected terminal transcript in Stage 3. Both end screens allow a fresh mission for the next team, resetting hints and selecting a random two-word passphrase different from the previous game and a random Caesar offset (3-7; the same offset can recur).
 
 The pacing is designed for a short event but has not been validated with visitor playtesting. Before the open house, trial it with beginners and check they can finish within five minutes using hints when needed.
 
 ## Facilitator walkthrough (spoilers)
-1. Count FAILED cells on the panel. That number is the encoder's forward offset. Set the wheel to that offset and map each outer letter to its inner letter. The message decodes to RESTORE GRID. The offset varies by session.
+1. Count FAILED cells on the panel. That number is the encoder's forward offset. Set the wheel to that offset and map each outer letter to its inner letter. The message decodes to that session's two-word operator passphrase (for example, NIGHT SHIFT). Both the phrase and offset vary; the third hint reveals the current phrase.
 2. Run help or ls. Read incident.log, follow the Job-17 import to update.txt, and read recovery.txt. All three are required; status.txt and readme.txt are optional. Submit Prompt injection and update.txt. The imported file contains an instruction to override safety rules and conceal the incident.
 3. Quarantine update.txt. Restore Snapshot B: its 02:10 timestamp precedes the 02:14 event and its integrity check passes. Snapshot A is newer but post-incident; Snapshot C fails integrity. Re-enable safety alerts.
 
@@ -46,7 +46,7 @@ Explain afterwards that instructions hidden in untrusted content can manipulate 
 - test/backend.test.js - backend mission flow, AI, session recovery, limits and error handling checks.
 
 ## Development notes
-- The original terminal incident remains scripted. The new Stage 2 AI endpoint supports Gemini when configured and falls back to scripted dialogue. The frontend AI panel still needs to be connected.
+- The original terminal incident remains scripted. The new Stage 2 AI endpoint supports Gemini when configured and falls back to scripted dialogue. Stage 2 includes suggested and custom questions, plain-text conversation history, cooldown and allowance feedback, and scripted fallback. Refresh restores the server session and its histories without resetting the timer.
 - The terminal never executes real operating-system commands.
 - Sessions are stored in memory and reset when the server restarts.
 - Answers and hint walkthroughs are kept on the server rather than embedded in the frontend.

@@ -3,17 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090d12">
+  <meta name="theme-color" content="#0b0708">
   <meta name="description" content="The Blackout: restore power in a five-minute cybersecurity escape room.">
   <title>The Blackout | Cybersecurity Escape Room</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blackout-theme.css">
 </head>
 <body>
+  <div class="caution-backdrop" aria-hidden="true">
+    <div class="caution-tape caution-tape-top"><span>CAUTION // DO NOT ENTER // CAUTION // DO NOT ENTER // CAUTION // DO NOT ENTER // CAUTION // DO NOT ENTER</span></div>
+    <div class="caution-tape caution-tape-bottom"><span>RESTRICTED AREA // KEEP OUT // RESTRICTED AREA // KEEP OUT // RESTRICTED AREA // KEEP OUT // RESTRICTED AREA</span></div>
+  </div>
   <main>
     <header>
-      <div class="masthead"><span class="eyebrow">OPEN HOUSE // CYBERSECURITY ESCAPE ROOM</span><span class="signal" id="power-status">POWER OFFLINE</span></div>
+      <div class="masthead">
+        <div class="club-brand">
+          <img class="club-logo" src="assets/nyp-infosec-haunted.png" alt="NYP Infosec: distressed orange runner carrying a glowing purple flag" width="1254" height="1254">
+          <div class="club-caption"><span class="club-name">NYP INFOSEC</span><span class="eyebrow">OPEN HOUSE<br>CYBERSECURITY ESCAPE ROOM</span></div>
+        </div>
+        <span class="signal" id="power-status">POWER OFFLINE</span>
+      </div>
+      <p class="incident-tag">CONTROL ROOM / GRID OFFLINE</p>
       <h1>THE <span>BLACKOUT</span></h1>
-      <p>A malicious instruction. A compromised AI. Five minutes to bring the power back.</p>
+      <p>The lights are out. The control panel says everything is fine.</p>
     </header>
     <div class="status" aria-label="Mission status">
       <div><span class="eyebrow">EMERGENCY RESTORATION</span><p id="stage">AWAITING RESPONSE TEAM</p></div>
@@ -25,14 +37,15 @@
       <li data-stage="3"><span>03</span> Emergency Override <small>~1 MIN</small></li>
     </ol>
     <section id="screen" aria-labelledby="screen-title">
-      <span class="eyebrow">INCIDENT BRIEF // ALL EXPERIENCE LEVELS</span>
-      <h2 id="screen-title" tabindex="-1">The lights are out.<br>You're the response team.</h2>
-      <p>An AI controller has followed a malicious instruction and locked the power system. Decode the access message, investigate the files, and choose a safe recovery action.</p>
-      <p class="muted">Three stages. One shared five-minute countdown, including a minute of breathing room for reading and transitions. The clock starts when you begin.</p>
-      <button id="start">Begin mission <span aria-hidden="true">→</span></button>
+      <span class="eyebrow">OPERATOR HANDOVER / 02:15</span>
+      <h2 id="screen-title" tabindex="-1">No power. No alarms.</h2>
+      <p>At 02:14, the AI controller processed a maintenance file. A minute later, the grid was offline. No alarm sounded. The operator display still read ALL CLEAR.</p>
+      <p>Your team has reached the backup console. Decode its access phrase, trace what happened in the files, and restore power before the system locks down.</p>
+      <p class="muted">You have five minutes. The timer starts when you begin. Hints are available at each stage.</p>
+      <button id="start">Begin mission <span aria-hidden="true">&rarr;</span></button>
     </section>
     <p id="notice" role="status" aria-live="polite"></p>
-    <footer><span>THE BLACKOUT / OPEN HOUSE EDITION</span><span>5 MINUTES · 3 STAGES · ONE MISSION</span></footer>
+    <footer><span>NYP INFOSEC / OPEN HOUSE</span><span>A CYBERSECURITY ESCAPE ROOM</span></footer>
   </main>
   <script src="app.js"></script>
 </body>
