@@ -16,13 +16,16 @@ function createApp(options = {}) {
     }
     res.vary('Origin');
     res.set('Access-Control-Allow-Headers', 'Content-Type, X-Session-Id');
+    res.set('Access-Control-Expose-Headers', 'Retry-After');
     res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     if (req.method === 'OPTIONS') return res.status(204).end();
     next();
   });
   app.use(express.json({ limit: '8kb' }));
   app.use('/api', createGameRouter(options.ai));
-  app.use(express.static(path.join(__dirname, '..', 'frontend')));
+  if ((options.serveFrontend ?? process.env.SERVE_FRONTEND !== 'false')) {
+    app.use(express.static(path.join(__dirname, '..', 'frontend')));
+  }
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.status === 400 || error.status === 413 ? error.status : 500;

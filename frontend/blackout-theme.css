@@ -1,3 +1,6 @@
+.form-feedback { color: #ffbdc6; font: 12px/1.8 var(--mono); overflow-wrap: anywhere; }
+.form-feedback:empty { display: none; }
+[aria-busy="true"] { cursor: progress; }
 .ai-panel { margin: 28px 0; padding: 22px; border: 1px solid #705077; border-left: 3px solid #c8a9f0; background: #100b16; }
 .ai-panel h3 { margin: 8px 0; font-size: 20px; }
 .ai-panel > .muted { font-size: 13px; }

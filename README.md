@@ -53,6 +53,8 @@ Explain afterwards that instructions hidden in untrusted content can manipulate 
 
 ## Backend and Gemini integration
 
+For Vercel frontend + Render backend setup, follow [Deployment instructions](docs/DEPLOYMENT.md). The repository includes vercel.json, render.yaml, and a public-only frontend build.
+
 See [Frontend tasks and API reference](docs/FRONTEND.md) for the API contract, frontend integration,
 session recovery and frontend testing instructions.
 

@@ -14,62 +14,62 @@ Build on frontend/index.html, frontend/app.js and frontend/style.css; you do not
 - Success, timeout and next-team restart screens.
 - Backend API calls and basic error messages.
 
-These features are implemented, but still need browser and visitor testing after your changes.
+The user reports that the full mission, refresh, timeout, two-team separation, fallback and event-device checks worked. The latest changes below have automated coverage; a fresh independent browser review is still pending.
 
-## 2. Your remaining tasks
+## 2. Frontend implementation checklist
 
 ### AI panel in Stage 2
 
-- [ ] Add a controller conversation panel alongside the terminal.
-- [ ] Create suggested-question buttons from state.ai.questions, using each item's id and text.
-- [ ] Optionally allow custom questions, limited to 300 characters.
-- [ ] Send questions to POST /api/ai, then display the player's question and returned reply.
-- [ ] Render dialogue with textContent or text nodes. Never insert model output with innerHTML.
-- [ ] Show a responding indicator and disable AI controls while a request is pending.
-- [ ] Keep the countdown updating and terminal/hints usable while waiting for AI.
-- [ ] Show a small scripted-mode notice when mode is scripted; this is a playable fallback, not an error.
-- [ ] Display state.ai.remainingRequests and respect the three-second request cooldown.
-- [ ] Handle errors with the actions described below.
-- [ ] Stop accepting questions after expiry or after leaving Stage 2.
-- [ ] Ignore late responses from an older session or stage; they must not replace the current screen.
+- [x] Add a controller conversation panel alongside the terminal.
+- [x] Create suggested-question buttons from state.ai.questions, using each item's id and text.
+- [x] Optionally allow custom questions, limited to 300 characters.
+- [x] Send questions to POST /api/ai, then display the player's question and returned reply.
+- [x] Render dialogue with textContent or text nodes. Never insert model output with innerHTML.
+- [x] Show a responding indicator and disable AI controls while a request is pending.
+- [x] Keep the countdown updating and terminal/hints usable while waiting for AI.
+- [x] Show a small scripted-mode notice when mode is scripted; this is a playable fallback, not an error.
+- [x] Display state.ai.remainingRequests and respect the three-second request cooldown.
+- [x] Handle errors with the actions described below.
+- [x] Stop accepting questions after expiry or after leaving Stage 2.
+- [x] Ignore late responses from an older session or stage; they must not replace the current screen.
 
 Do not make talking to the AI mandatory: the backend unlocks Stage 3 using collected evidence and the diagnosis.
 The AI is supporting dialogue. It does not check puzzle answers or decide whether a player wins.
 
 ### Refresh recovery
 
-- [ ] Save sessionId in sessionStorage after a successful start.
-- [ ] On reload, call GET /api/state with the saved ID before starting a new session.
-- [ ] Restore the stage, countdown, terminal transcript, revealed hint and AI conversation.
-- [ ] If state.ai.pending is true after refresh, poll state until the in-flight request completes.
-- [ ] Show the timeout screen for expired:true and success screen for finished:true.
-- [ ] On 401, clear the saved ID and offer a new mission.
-- [ ] On next-team restart, replace the saved ID and clear all old UI state.
-- [ ] Do not turn a temporary connection error into a new mission.
+- [x] Save sessionId in sessionStorage after a successful start.
+- [x] On reload, call GET /api/state with the saved ID before starting a new session.
+- [x] Restore the stage, countdown, terminal transcript, revealed hint and AI conversation.
+- [x] If state.ai.pending is true after refresh, poll state until the in-flight request completes.
+- [x] Show the timeout screen for expired:true and success screen for finished:true.
+- [x] On 401, clear the saved ID and offer a new mission.
+- [x] On next-team restart, replace the saved ID and clear all old UI state.
+- [x] Do not turn a temporary connection error into a new mission.
 
 Do not save the countdown as a new deadline in the browser. The server keeps the original deadline.
 Refreshing must not grant more time.
 
 ### Loading and error behaviour
 
-- [ ] Visibly disable the relevant submit button while its request is processing.
-- [ ] Re-enable controls in a finally block, unless the stage or mission has ended.
-- [ ] Keep errors next to the relevant form and announce important status changes.
-- [ ] Preserve input when a request fails so players can retry.
-- [ ] Continue polling game state during AI requests; use a separate AI loading flag from other actions.
-- [ ] Avoid overlapping state polls and ignore stale responses.
-- [ ] Do not automatically retry AI requests: they may consume another request allowance.
+- [x] Visibly disable the relevant submit button while its request is processing.
+- [x] Re-enable controls in a finally block, unless the stage or mission has ended.
+- [x] Keep errors next to the relevant form and announce important status changes.
+- [x] Preserve input when a request fails so players can retry.
+- [x] Continue polling game state during AI requests; use a separate AI loading flag from other actions.
+- [x] Avoid overlapping state polls and ignore stale responses.
+- [x] Do not automatically retry AI requests: they may consume another request allowance.
 
 ### CSS and usability
 
-- [ ] Finalise the Blackout visual theme across all screens.
-- [ ] Make the simulated terminal resemble a Linux terminal with a clear prompt and readable history.
-- [ ] Keep command entry keyboard-friendly: Enter executes and focus returns to the input.
-- [ ] Keep the enlarged wheel and backup-cell labels readable. Cell numbers identify cells; count FAILED cells for the key.
-- [ ] Make wheel controls, AI panel, terminal and forms fit the event's screen sizes.
-- [ ] Provide labels, keyboard navigation, visible focus and readable colour contrast.
-- [ ] Respect reduced-motion preferences and avoid flashing effects.
-- [ ] Use visual and text indicators for progress/errors, not colour alone.
+- [x] Finalise the Blackout visual theme across all screens.
+- [x] Make the simulated terminal resemble a Linux terminal with a clear prompt and readable history.
+- [x] Keep command entry keyboard-friendly: Enter executes and focus returns to the input.
+- [x] Keep the enlarged wheel and backup-cell labels readable. Cell numbers identify cells; count FAILED cells for the key.
+- [x] Make wheel controls, AI panel, terminal and forms fit the event's screen sizes.
+- [x] Provide labels, keyboard navigation, visible focus and readable colour contrast.
+- [x] Respect reduced-motion preferences and avoid flashing effects.
+- [x] Use visual and text indicators for progress/errors, not colour alone.
 
 ## 3. Run the project
 
@@ -136,7 +136,7 @@ replyElement.textContent = data.reply;
 ~~~
 
 Fallback reasons: not_configured, provider_error, unavailable_response, timeout.
-The backend normally switches to fallback after an eight-second AI timeout.
+The backend defaults to a 30-second AI timeout (AI_TIMEOUT_MS, configurable up to 60 seconds). The browser allows 65 seconds for AI requests and 10 seconds for other requests.
 Fallback replies still count toward the question allowance.
 state.ai.configured means a key is present, not that Google has verified it.
 
@@ -209,20 +209,32 @@ Ask the backend owner about persistence before depending on long-term saved prog
 
 ## 6. Acceptance checklist before handoff
 
-- [ ] Complete all three stages with correct answers.
-- [ ] Wrong answers stay on the current stage and show useful feedback.
-- [ ] Terminal output preserves commands/history and scrolls to new output.
-- [ ] Each stage reveals hints progressively and caps at three.
-- [ ] Wheel changes offset visibly and still maps letters correctly.
-- [ ] AI suggested questions and custom input work; replies appear as plain text.
-- [ ] AI fallback is clearly indicated and does not block puzzle completion.
-- [ ] Duplicate clicks, pending replies, cooldowns and exhausted allowance are handled.
-- [ ] The timer continues during AI loading and connection failures.
-- [ ] A late reply cannot reopen a stage or overwrite a new team's screen.
-- [ ] Refresh restores progress, histories and latest revealed hint without adding time.
-- [ ] Expiry and success screens disable gameplay and allow the next team to start cleanly.
-- [ ] Two browser sessions/teams do not see each other's history or progress.
-- [ ] Keyboard-only use and event screen sizes are tested.
-- [ ] Beginner visitors can complete the whole experience within five minutes with optional hints.
+- [x] Complete all three stages with correct answers.
+- [x] Wrong answers stay on the current stage and show useful feedback.
+- [x] Terminal output preserves commands/history and scrolls to new output.
+- [x] Each stage reveals hints progressively and caps at three.
+- [x] Wheel changes offset visibly and still maps letters correctly.
+- [x] AI suggested questions and custom input work; replies appear as plain text.
+- [x] AI fallback is clearly indicated and does not block puzzle completion.
+- [x] Duplicate clicks, pending replies, cooldowns and exhausted allowance are handled.
+- [x] The timer continues during AI loading and connection failures.
+- [x] A late reply cannot reopen a stage or overwrite a new team's screen.
+- [x] Refresh restores progress, histories and latest revealed hint without adding time.
+- [x] Expiry and success screens disable gameplay and allow the next team to start cleanly.
+- [x] Two browser sessions/teams do not see each other's history or progress.
+- [ ] Independently recheck keyboard-only use and event screen sizes after the latest changes.
+- [x] Beginner playtesting reported complete by the user; timing is not established by automated tests.
 
 Use npm test for backend regression checks. It does not replace browser testing or visitor playtesting.
+
+## 7. Latest verification (2026-11-13)
+
+- `npm test`: 29 passing tests across backend mission flow and frontend behavior.
+- `node --check frontend/app.js` and `git diff --check`: passed.
+- Frontend regression tests cover plain-text AI rendering, loading, cooldown/allowance/pending guards, retry-after, input preservation, session loss, refresh history recovery, outage countdown, overlapping polls, stale snapshots and old-team replies.
+- Added visible loading and local form feedback for answers, terminal commands and hints. AI loading remains independent of other controls.
+- Polling continues while forms or AI are busy. The visible countdown extrapolates the last server state during network failures without extending the server deadline.
+- Temporary refresh errors offer a connection retry without creating a new mission. Missing sessions clear browser storage and restore the mission brief.
+- Live Gemini: the user confirmed a successful minimal request to gemini-3.1-flash-lite; full live game-prompt verification is separate from mocked tests.
+- Browser rendering, contrast, keyboard interaction and screen-size checks require a browser; the checklist above distinguishes implementation from independent visual verification.
+Browser-check attempt: local HTTP access returned EACCES; the available Chrome window remained minimized and the computer-use interface could not inspect it. Independent visual and keyboard verification remains unchecked.
