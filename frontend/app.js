@@ -2,25 +2,80 @@ let sessionId = null, state = null, ticker = null, busy = false;
 let terminalHistory = '', wheelShift = 0;
 const hintHistory = {};
 let aiBusy = false, aiCooldownUntil = 0, pollBusy = false;
+let stateReceivedAt = Date.now();
 const screen = document.querySelector('#screen');
+const initialBrief = screen.innerHTML;
 const notice = document.querySelector('#notice');
 const names = ['Crack the Code', 'The Corrupted AI', 'Emergency Override'];
 async function api(path, body) {
-  const res = await fetch('/api' + path, {
+  const requestedSession = sessionId;
+  const res = await fetch((globalThis.BLACKOUT_CONFIG?.apiBaseUrl || '') + '/api' + path, {
     method: body ? 'POST' : 'GET',
     headers: { 'Content-Type': 'application/json', ...(sessionId ? { 'x-session-id': sessionId } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {})
+    ...(body ? { body: JSON.stringify(body) } : {}),
+    signal: AbortSignal.timeout(path === '/ai' ? 65000 : 10000)
   });
   const data = await res.json();
-  if (!res.ok) throw Object.assign(Error(data.error || 'Request failed'), { status: res.status, data });
+  if (!res.ok) {
+    if (!data.retryAfter) data.retryAfter = Number(res.headers.get('Retry-After')) || undefined;
+    if (res.status === 401 && requestedSession === sessionId) resetMissingSession();
+    throw Object.assign(Error(data.error || 'Request failed'), { status: res.status, data });
+  }
   return data;
 }
+function resetMissingSession() {
+  clearInterval(ticker);
+  try { sessionStorage.removeItem('blackout-session'); } catch {}
+  sessionId = null;
+  state = null;
+  aiBusy = false;
+  aiCooldownUntil = 0;
+  screen.innerHTML = initialBrief;
+  document.querySelector('#start').onclick = start;
+  document.querySelector('#stage').textContent = 'AWAITING RESPONSE TEAM';
+  document.querySelector('#timer').textContent = '05:00';
+  document.querySelector('#power-status').textContent = 'POWER OFFLINE';
+  document.body.classList.remove('urgent', 'restored');
+  document.querySelectorAll('[data-stage]').forEach(item => {
+    item.classList.remove('active', 'complete');
+    item.removeAttribute('aria-current');
+  });
+  notice.textContent = 'Previous mission unavailable. Begin a new mission.';
+}
+function loading(target, active) {
+  if (!target?.isConnected) return;
+  target.setAttribute('aria-busy', String(active));
+  const controls = target.matches('button') ? [target] : target.querySelectorAll('button');
+  controls.forEach(button => { button.disabled = active || (!['start', 'again'].includes(button.id) && Boolean(state?.expired || state?.finished)); });
+}
+function formMessage(form, message) {
+  if (!form?.isConnected) return;
+  let feedback = form.querySelector('.form-feedback');
+  if (!feedback) {
+    feedback = document.createElement('p');
+    feedback.className = 'form-feedback';
+    feedback.setAttribute('role', 'status');
+    form.append(feedback);
+  }
+  feedback.textContent = message;
+}
 function update(s) {
+  const previousStage = state?.stage;
   // A delayed poll must not undo a submitted answer or a completed mission.
   if (state && (s.stage < state.stage || (state.finished && !s.finished) ||
       (state.expired && !s.expired) || s.readFiles.length < state.readFiles.length)) return;
+  if (state) {
+    // Concurrent AI, terminal and polling responses must not erase newer data.
+    s.remainingSeconds = Math.min(s.remainingSeconds, state.remainingSeconds);
+    if (s.ai.history.length < state.ai.history.length || s.ai.remainingRequests > state.ai.remainingRequests) s.ai = state.ai;
+    for (const [stage, hint] of Object.entries(state.revealedHints || {})) {
+      if ((s.revealedHints?.[stage]?.level || 0) < hint.level) s.revealedHints[stage] = hint;
+    }
+  }
   const endedBefore = state?.expired || state?.finished;
   state = s;
+  stateReceivedAt = Date.now();
+  Object.assign(hintHistory, s.revealedHints);
   syncAiPanel();
   document.querySelector('#stage').textContent = s.finished ? 'MISSION COMPLETE' : s.expired ? 'SYSTEM LOCKDOWN' : 'STAGE ' + s.stage + ' / 3 - ' + names[s.stage - 1];
   document.querySelector('#timer').textContent = String(Math.floor(s.remainingSeconds / 60)).padStart(2, '0') + ':' + String(s.remainingSeconds % 60).padStart(2, '0');
@@ -37,11 +92,20 @@ function update(s) {
   if (s.expired || s.finished) {
     clearInterval(ticker);
     if (!endedBefore) render();
-  }
+  } else if (previousStage && previousStage !== s.stage) render();
+}
+function tickClock() {
+  if (!state || state.finished || state.expired) return;
+  const remaining = Math.max(0, state.remainingSeconds - Math.floor((Date.now() - stateReceivedAt) / 1000));
+  document.querySelector('#timer').textContent = String(Math.floor(remaining / 60)).padStart(2, '0') + ':' + String(remaining % 60).padStart(2, '0');
+  document.body.classList.toggle('urgent', remaining <= 60);
+  if (!remaining) update({ ...state, remainingSeconds: 0, expired: true });
 }
 async function start() {
   if (busy) return;
   busy = true;
+  const button = document.querySelector('#start, #again');
+  loading(button, true);
   clearInterval(ticker);
   try {
     const d = await api('/start', {});
@@ -56,34 +120,40 @@ async function start() {
     notice.textContent = '';
     update(d.state);
     render();
-    startPolling();
+    if (!state.finished && !state.expired) startPolling();
   } catch (e) { notice.textContent = e.message; }
-  finally { busy = false; }
+  finally { busy = false; loading(button, false); }
 }
 function startPolling() {
     clearInterval(ticker);
     ticker = setInterval(async () => {
+      tickClock();
       syncAiPanel();
-      if (busy || pollBusy) return;
+      if (pollBusy) return;
       pollBusy = true;
       const currentSession = sessionId;
       try {
         const s = await api('/state');
         if (currentSession === sessionId) update(s);
-      } catch (e) { notice.textContent = 'Connection interrupted. The mission clock continues. ' + e.message; }
+      } catch (e) { if (currentSession === sessionId) notice.textContent = 'Connection interrupted. The mission clock continues. ' + e.message; }
       finally { pollBusy = false; }
     }, 1000);
 }
 async function answer(stage, value) {
   if (busy || state?.expired || state?.finished) return;
   busy = true;
+  const currentSession = sessionId;
+  const form = document.querySelector(stage === 1 ? '#decode' : stage === 2 ? '#diagnosis' : '#recovery');
+  loading(form, true);
+  formMessage(form, 'Checking response…');
   try {
     const d = await api('/answer', { stage, value });
+    if (currentSession !== sessionId) return;
     update(d.state);
-    if (d.ok && !d.state.finished) render();
     notice.textContent = d.message;
-  } catch (e) { notice.textContent = e.message; }
-  finally { busy = false; }
+    if (!d.ok) formMessage(form, d.message);
+  } catch (e) { if (currentSession === sessionId) { formMessage(form, e.message); notice.textContent = e.message; } }
+  finally { busy = false; loading(form, false); }
 }
 function focusTitle() { screen.querySelector('h2')?.focus(); }
 function render() {
@@ -166,16 +236,20 @@ function mountHints() {
   document.querySelector('#hint-button').onclick = async () => {
     if (busy || state.expired || state.finished) return;
     busy = true;
+    const currentSession = sessionId;
+    const button = document.querySelector('#hint-button');
+    loading(button, true);
     const stage = state.stage;
     try {
       const d = await api('/hint', {});
+      if (currentSession !== sessionId) return;
       update(d.state);
       if (!state.expired && !state.finished && state.stage === stage) {
         if (d.ok) { hintHistory[stage] = d; updateHintPanel(); }
         else notice.textContent = d.message;
       }
-    } catch (e) { notice.textContent = e.message; }
-    finally { busy = false; }
+    } catch (e) { if (currentSession === sessionId) document.querySelector('#hint-text')?.replaceChildren(document.createTextNode(e.message)); }
+    finally { busy = false; loading(button, false); if (state && document.querySelector('#hint-button')) updateHintPanel(); }
   };
 }
 function updateHintPanel() {
@@ -234,7 +308,7 @@ function syncAiPanel() {
   document.querySelectorAll('#ai-questions button, #ai-send').forEach(button => {
     button.disabled = locked || waiting || cooldown > 0 || state.ai.remainingRequests <= 0;
   });
-  document.querySelector('#ai-message').disabled = locked;
+  document.querySelector('#ai-message').disabled = locked || waiting;
   const fallback = turns.at(-1)?.mode === 'scripted';
   document.querySelector('#ai-status').textContent = (waiting ? 'Controller responding… ' : cooldown ? 'Next question in ' + cooldown + 's. ' : '') + state.ai.remainingRequests + ' questions remaining.' + (fallback ? ' Backup dialogue active; you can continue investigating.' : '');
 }
@@ -247,15 +321,15 @@ async function askController(payload, originalInput) {
   syncAiPanel();
   try {
     await api('/ai', payload);
-    if (sessionId !== currentSession || state.stage !== 2 || state.finished || state.expired) return;
+    if (sessionId !== currentSession || state?.stage !== 2 || state.finished || state.expired) return;
     // Read fresh state: terminal activity may have advanced while AI was responding.
     const fresh = await api('/state');
-    if (sessionId !== currentSession || state.stage !== 2 || state.finished || state.expired) return;
+    if (sessionId !== currentSession || state?.stage !== 2 || state.finished || state.expired) return;
     update(fresh);
     const input = document.querySelector('#ai-message');
     if (input && originalInput !== undefined && input.value === originalInput) input.value = '';
   } catch (e) {
-    if (sessionId !== currentSession || state.stage !== 2 || state.finished || state.expired) return;
+    if (sessionId !== currentSession || state?.stage !== 2 || state.finished || state.expired) return;
     if (e.data?.state) update(e.data.state);
     if (e.data?.retryAfter) aiCooldownUntil = Date.now() + e.data.retryAfter * 1000;
     if (e.status === 409) state.ai.pending = true;
@@ -272,22 +346,28 @@ async function execute(e) {
   e.preventDefault();
   if (busy || state.expired) return;
   busy = true;
+  const currentSession = sessionId;
+  const form = document.querySelector('#terminal');
+  loading(form, true);
+  formMessage(form, 'Executing…');
   const input = document.querySelector('#command');
   const command = input.value;
   try {
     const d = await api('/terminal', { command });
+    if (currentSession !== sessionId) return;
     terminalHistory += '\n\nanalyst@blackout:~$ ' + command + '\n' + d.output;
     update(d.state);
-    if (!state.expired) {
+    if (!state.expired && state.stage === 2 && !state.finished) {
       const output = document.querySelector('#output');
       output.textContent = terminalHistory;
       output.scrollTop = output.scrollHeight;
-      input.value = '';
+      if (input.value === command) input.value = '';
       input.focus();
       updateEvidence();
+      formMessage(form, '');
     }
-  } catch (e) { notice.textContent = e.message; }
-  finally { busy = false; }
+  } catch (e) { if (currentSession === sessionId) formMessage(form, e.message); }
+  finally { busy = false; loading(form, false); }
 }
 function buildWheel() {
   const svg = document.querySelector('#wheel');
@@ -397,9 +477,13 @@ async function restoreMission() {
     if (e.status === 401) {
       try { sessionStorage.removeItem('blackout-session'); } catch {}
       sessionId = null;
+      document.querySelector('#start').onclick = start;
       notice.textContent = 'Previous mission unavailable. Begin a new mission.';
     } else {
-      notice.textContent = 'Could not reconnect. Reload to retry your existing mission.';
+      notice.textContent = 'Could not reconnect. Retry to resume your existing mission.';
+      button.disabled = false;
+      button.textContent = 'Retry connection';
+      button.onclick = restoreMission;
       return;
     }
   }

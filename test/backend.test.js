@@ -182,6 +182,11 @@ test('JSON errors, length limits, CORS and health endpoint', async () => {
   const preflight = await request(app, '/ai', undefined, undefined, { method: 'OPTIONS', headers: { origin: 'https://frontend.example' } });
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers['access-control-allow-origin'], 'https://frontend.example');
+  assert.equal(preflight.headers['access-control-expose-headers'], 'Retry-After');
+  assert.equal(preflight.headers['cache-control'], 'no-store');
+  const allowed = await request(app, '/state', undefined, id, { headers: { origin: 'https://frontend.example' } });
+  assert.equal(allowed.status, 200);
+  assert.equal(allowed.headers['access-control-allow-origin'], 'https://frontend.example');
 });
 test('limiter blocks excess requests and resets after its window', () => {
   const limiter = createLimiter(1, 1000, () => 'all');
