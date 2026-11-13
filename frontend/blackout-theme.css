@@ -1,0 +1,295 @@
+.ai-panel { margin: 28px 0; padding: 22px; border: 1px solid #705077; border-left: 3px solid #c8a9f0; background: #100b16; }
+.ai-panel h3 { margin: 8px 0; font-size: 20px; }
+.ai-panel > .muted { font-size: 13px; }
+#ai-history { max-height: 330px; overflow-y: auto; overflow-wrap: anywhere; scrollbar-color: #694b78 #0c0812; }
+.ai-turn { padding: 12px 14px; margin: 10px 0; background: #1c1321; border-left: 2px solid #775478; }
+.ai-turn strong { font: 10px/1.5 var(--mono); letter-spacing: 1px; color: #c9b0d3; }
+.ai-turn p { margin: 6px 0 0; white-space: pre-wrap; font-size: 14px; color: #eee2ed; }
+.controller-turn { background: #0b1513; border-left-color: #83e6b8; }
+.controller-turn strong { color: #83e6b8; }
+.ai-questions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.ai-questions button { text-align: left; background: #201429; border-color: #84618e; color: #edd7fa; font-size: 11px; padding: 10px 12px; box-shadow: none; }
+#ai-status { color: #cbb8d2; font: 11px/1.8 var(--mono); }
+#ai-error { color: #ffadba; font: 12px/1.8 var(--mono); }
+#ai-error:empty { display: none; }
+@media (max-width: 650px) { .ai-panel { padding: 16px; } .ai-questions button { width: 100%; } }
+
+/* Rotate only the inner alphabet; counter-rotate letters to keep them upright. */
+#wheel .inner-ring { transform-origin: 150px 150px; }
+#wheel .inner-ring, #wheel .inner-ring text { transition: transform 450ms ease-in-out; transform-box: view-box; }
+.wheel-turns { display: flex; gap: 8px; margin-top: 10px; }
+.wheel-turns button { min-width: 60px; font-size: 20px; padding: 6px 18px; }
+@media (prefers-reduced-motion: reduce) {
+  #wheel .inner-ring, #wheel .inner-ring text { transition: none; }
+}
+
+/* Decorative tape stays behind the interactive mission. */
+.caution-backdrop { position: fixed; inset: 0; overflow: hidden; pointer-events: none; user-select: none; z-index: 0; }
+.caution-tape {
+  position: absolute; left: -15%; width: 130%; height: 58px;
+  display: flex; align-items: center; justify-content: center;
+  border-block: 7px solid transparent;
+  background: repeating-linear-gradient(125deg, #17120b 0 18px, #c29b36 18px 36px) border-box;
+  box-shadow: 0 8px 22px #0009; opacity: .38;
+}
+.caution-tape span {
+  display: block; width: 100%; text-align: center; white-space: nowrap;
+  background: #c29b36; color: #17120b;
+  font: 900 17px/44px Consolas, monospace; letter-spacing: 3px;
+}
+.caution-tape-top { top: 24%; transform: rotate(-13deg); }
+.caution-tape-bottom { bottom: 15%; transform: rotate(11deg); opacity: .26; }
+@media (max-width: 650px) {
+  .caution-tape { width: 180%; left: -40%; opacity: .24; }
+  .caution-tape span { font-size: 13px; letter-spacing: 2px; }
+}
+@media (forced-colors: active) { .caution-backdrop { display: none; } }
+
+/* The Blackout: haunted control room / Halloween escape edition. */
+:root {
+  --accent: #ffb76e;
+  --cyan: #c8a9f0;
+  --muted: #b6a9bf;
+  --border: #4b354f;
+  --panel: #160f1d;
+  --danger: #ff777d;
+  background: #08070b;
+  color: #f1e8db;
+}
+body {
+  background:
+    radial-gradient(ellipse at 5% 5%, #63338726, transparent 50%),
+    radial-gradient(ellipse at 100% 65%, #ba292426, transparent 43%),
+    radial-gradient(circle at 13% 23%, #ff9c4d3a 0 1px, transparent 2px),
+    radial-gradient(circle at 85% 59%, #b886df40 0 1px, transparent 2px),
+    linear-gradient(#b79ccc04 1px, transparent 1px),
+    linear-gradient(90deg, #b79ccc04 1px, transparent 1px),
+    #08070b;
+  background-size: auto, auto, 293px 337px, 397px 271px, 56px 56px, 56px 56px, auto;
+}
+body::before { background: repeating-linear-gradient(0deg, transparent 0 3px, #00000010 3px 4px); opacity: .4; }
+body::after {
+  content: ""; position: fixed; inset: auto 0 0; height: 28vh;
+  background: radial-gradient(ellipse at 95% 130%, #f32c3822, transparent 65%);
+  pointer-events: none; z-index: -1;
+}
+main { max-width: 1160px; padding-top: 24px; }
+.masthead { padding-bottom: 20px; border-color: #59384d; gap: 24px; }
+.club-brand { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.club-logo {
+  display: block; width: 116px; height: 116px; flex-shrink: 0; object-fit: contain;
+  border: 1px solid #8b5d9d; border-radius: 5px;
+  box-shadow: 0 8px 28px #0007;
+}
+.club-caption { display: grid; gap: 8px; }
+.club-name { font: 800 18px/1.2 "Segoe UI", sans-serif; letter-spacing: 3px; color: #f5debe; }
+.club-caption .eyebrow { color: #c0abc8; font-size: 9px; line-height: 1.9; letter-spacing: 1.3px; }
+.signal {
+  color: #ff8b94; border-color: #c343557d; background: #e22a3e10;
+  letter-spacing: 1.8px; padding: 10px 14px;
+}
+.signal::before { border-radius: 50%; box-shadow: 0 0 14px currentColor; }
+header > .incident-tag { margin: 26px 0 0; font: 10px/1.8 var(--mono); letter-spacing: 2px; color: #ff8796; }
+h1 { font-size: clamp(43px, 8.7vw, 98px); margin: 13px 0 18px; color: #c7b7bd; letter-spacing: -4px; }
+h1 span {
+  background: linear-gradient(180deg, #fff2ce 8%, #ffd5a0 38%, #ff9c59 70%, #c55332 100%);
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+header > p { color: #c8b7c6; font-size: 16px; max-width: 730px; }
+.status {
+  border-color: #66404b; border-left: 3px solid #ff5265;
+  background: linear-gradient(110deg, #30121c, #160e1c 50%, #25152a);
+  box-shadow: 0 12px 35px #0005, inset 0 1px #c4a1e80d, 0 0 35px #d82b3410; padding-top: 23px;
+}
+.status::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: repeating-linear-gradient(130deg, #d84455 0 10px, #152038 10px 20px); opacity: .8;
+}
+.status .eyebrow { color: #ff929e; }
+#stage { color: #eedbd7; }
+.clock { border-color: #684459; }
+.clock > span { color: #c6aebf; }
+#timer { color: #ffb788; text-shadow: 0 0 26px #fb693b50; font-weight: 700; }
+.progress li { background: #120d19; border-color: #443149; border-top-color: #61445c; color: #bfacbf; }
+.progress li > span { color: #a48cae; }
+.progress .active {
+  color: #f4dfff; border-top-color: #c49be9;
+  background: linear-gradient(135deg, #35213f, #1b1225);
+  box-shadow: inset 0 1px #c49be920, 0 5px 25px #a648d515;
+}
+.progress .active::after { background: #f6e3ff; box-shadow: 0 0 14px #cb83ffbb; }
+.progress .complete { border-top-color: var(--green); color: var(--green); }
+section {
+  border-color: #563b54;
+  background: radial-gradient(ellipse at 100% 0%, #8143b018, transparent 55%), linear-gradient(135deg, #1a1221, #0f0b15);
+  box-shadow: 0 25px 65px #0007, inset 0 1px #e2bdff0c;
+}
+section::before { border-color: #c68bdd; }
+section::after { border-color: #bd3e50; }
+section > p { color: #d7c9d7; }
+h2 { color: #f6e9de; font-weight: 700; }
+h3 { color: #ead7ea; }
+button {
+  background: linear-gradient(110deg, #a52c26, #c3492f);
+  border-color: #ff9462; color: #fff3df;
+  box-shadow: inset 0 1px #ffe4b730, 0 5px 24px #ed5a2f25;
+}
+button:hover:not(:disabled) { background: #d55c36; border-color: #ffcc93; box-shadow: 0 0 30px #ff783940; }
+button:active:not(:disabled) { background: #8c2423; }
+button:disabled { box-shadow: none; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline-color: #eed3ff; }
+input, select { background: #090710; border-color: #775478; color: #f1e5f2; caret-color: #d5a3ff; }
+input::placeholder { color: #af94b5; }
+input:focus, select:focus { border-color: #d1a1f1; }
+label { color: #cbb0d0; }
+code { background: #cfadf20c; border-color: #cfadf225; }
+.cipher-message {
+  border-color: #b46e3880; border-left-color: #f7ae68; background: #f7984208;
+  color: #eed3ff; text-shadow: 0 0 24px #ff9c4535;
+}
+.backup-panel { background: #110c17; border-color: #573c5f; }
+.backup-panel > p { color: #c3a8ca; }
+.cell { border-color: #62476d; }
+.cell.failed { background: #251018; color: #ff9baa; border-color: #bd3c5555; }
+.cell.online { color: var(--green); background: #83e6b80c; border-color: #83e6b84d; }
+#wheel { filter: drop-shadow(0 16px 12px #000b) drop-shadow(0 0 22px #af58f024); }
+#wheel .wheel-rim { stroke: #c7a18a; }
+#wheel .wheel-tick { stroke: #c1a9c7; }
+#wheel .wheel-inner-face, #wheel .wheel-hub { stroke: #b891b9; }
+#wheel .decoded { fill: #ffd3a0; }
+#wheel-feedback { background: #c890ec0a; color: #e8d1f6; border-left-color: #cb96ee; }
+.terminal-bar { background: linear-gradient(90deg, #281e30, #140e1c); border-color: #66466e; color: #c1a7cb; }
+.terminal-bar > span:first-child { color: #98e4b5; }
+pre { background: #050b10; border-color: #533d60; color: #a7e6b6; }
+#output { box-shadow: inset 0 0 35px #0008; scrollbar-color: #694b78 #0c0812; }
+#terminal input { color: #a7e6b6; background: #050c11; }
+#evidence { color: #cfb5d7; background: #150d1e; border-color: #7b588a; }
+.choices button { background: #1a1020; color: #e6d2eb; border-color: #705077; box-shadow: none; }
+.choices button::before { color: #c9a3d9; }
+.choices button:hover:not(:disabled) { background: #35203f; border-color: #d3a7ec; color: #ffefff; box-shadow: inset 3px 0 #ff6278; }
+.choices button:hover:not(:disabled)::before { color: #f0ceff; }
+.evidence-card, .lesson { background: #120c1a; border-color: #614065; border-left-color: #cba0ec; }
+.evidence-card p { color: #cfb5d4; }
+.evidence-card strong { color: #f5e2f7; }
+.hint-panel { border-color: #6d4a78; }
+#hint-button { background: #c6a1ee05; border-color: #9967b980; color: #ddbcfa; box-shadow: none; }
+#hint-button:hover:not(:disabled) { background: #b67ce314; border-color: #f0d6ff; }
+#hint-text { color: #e7c9e9; }
+#notice { color: #ffadba; }
+#notice:not(:empty) { background: #fa49600a; border-color: #ee687e; }
+footer { border-color: #593d5d; color: #b59cbb; }
+.urgent #timer { color: #ff8797; text-shadow: 0 0 28px #ff365577; }
+.urgent .status { border-left-color: #ff6378; background: linear-gradient(110deg, #331525, #10172e); }
+.restored { --accent: #83e6b8; --cyan: #83e6b8; }
+.restored .status { border-color: #436f57; border-left-color: #83e6b8; background: linear-gradient(110deg, #142b29, #0b1b2b); }
+.restored .status::before { background: #83e6b8; opacity: .6; }
+.restored #timer, .restored .status .eyebrow { color: #83e6b8; text-shadow: none; }
+.restored .signal { border-color: #83e6b866; color: #83e6b8; background: #83e6b80b; }
+.restored section { border-color: #436f57; }
+.restored h2 { color: #a6f1c7; }
+.restored button { background: #83e6b8; border-color: #b9fbd7; color: #0b2016; }
+.restored button:hover:not(:disabled) { background: #b9fbd7; box-shadow: 0 0 25px #83e6b82b; }
+::selection { background: #cc8aff50; color: #fff; }
+@media (max-width: 650px) {
+  main { padding-top: 16px; }
+  .masthead { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .club-brand { gap: 12px; }
+  .club-logo { width: 88px; height: 88px; }
+  .club-name { font-size: 15px; letter-spacing: 2px; }
+  .club-caption .eyebrow { font-size: 8px; letter-spacing: .5px; }
+  .signal { font-size: 9px; padding: 8px 10px; }
+  h1 { font-size: clamp(38px, 9vw, 58px); letter-spacing: -2px; }
+  header > .incident-tag { font-size: 8px; letter-spacing: 1px; }
+}
+@media (forced-colors: active) {
+  h1 span { background: none; -webkit-text-fill-color: CanvasText; }
+  .signal, .status, section, button, .club-logo { border: 1px solid CanvasText; }
+}
+
+/* Escape-room atmosphere: distant fog, distressed edges and an imposing title. */
+body { overflow-x: clip; }
+body::after {
+  inset: 0;
+  height: auto;
+  z-index: 0;
+  opacity: .45;
+  background:
+    radial-gradient(ellipse at 8% 60%, #947bb115 0, transparent 55%),
+    radial-gradient(ellipse at 95% 100%, #a53b381a 0, transparent 60%);
+  /* Static haze keeps attention on the puzzles. */
+}
+main { position: relative; z-index: 1; }
+header { padding-bottom: 17px; }
+.club-logo { border-color: #9665a1; box-shadow: 0 9px 25px #000a; }
+.club-name { color: #f7d7ae; letter-spacing: 3.5px; }
+h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 8vw, 94px);
+  font-weight: 900;
+  letter-spacing: -2.5px;
+  text-shadow: 0 6px 0 #0007;
+}
+h1 span {
+  background-image: linear-gradient(180deg, #ffe9c3 0%, #fbc394 37%, #e78053 72%, #8e3034 100%);
+  text-shadow: none;
+}
+header > .incident-tag { color: #fa8796; border-left: 2px solid #a73043; padding-left: 10px; }
+section {
+  background:
+    linear-gradient(125deg, #6f3c4a07 25%, transparent 25% 74%, #7f4a6208 74%),
+    radial-gradient(ellipse at 80% 0%, #6a347f18, transparent 60%),
+    linear-gradient(125deg, #1c1321, #0d0a12);
+  border-color: #634452;
+  box-shadow: 0 22px 70px #0009, inset 0 1px #edd2ed09, inset 0 0 70px #0004;
+}
+section::before, section::after { width: 18px; height: 18px; }
+h2 { text-shadow: 0 2px 15px #0005; }
+.status { box-shadow: 0 0 28px #bc1c3015, inset 0 1px #ffe3da0b; }
+.status::before { height: 4px; background: repeating-linear-gradient(130deg, #aa394a 0 10px, #130d1b 10px 20px); }
+.signal { border-color: #ae4558; background: #6110241a; }
+.progress .active { box-shadow: inset 0 1px #d5afff24, 0 0 24px #a33dd515; }
+.terminal-bar { border-radius: 6px 6px 0 0; }
+#output { background: #07090a; }
+.restored .status::before { background: #83e6b8; }
+@keyframes room-fog {
+  from { transform: translate3d(-1%, 0, 0); opacity: .3; }
+  to { transform: translate3d(1%, -2%, 0); opacity: .55; }
+}
+
+/* Abandoned control-room finish, shared across every mission stage. */
+body {
+  background:
+    radial-gradient(ellipse at 0% 35%, #5c263325, transparent 55%),
+    radial-gradient(ellipse at 100% 15%, #533a6426, transparent 50%),
+    repeating-linear-gradient(90deg, transparent 0 139px, #ac868206 140px 141px),
+    #090609;
+}
+header > .incident-tag { letter-spacing: 1.7px; }
+h1 span {
+  background-image: repeating-linear-gradient(174deg, transparent 0 14px, #13080c99 15px 16px, transparent 17px 28px), linear-gradient(#fff1cf 3%, #e9b990 40%, #c56b4d 75%, #853943);
+  filter: none;
+}
+h2 { font-family: Georgia, "Times New Roman", serif; line-height: 1.18; }
+.entry-note { display: inline-block; margin: 18px 0 0 18px; color: #cda59e; font: 9px/1.8 var(--mono); letter-spacing: 1px; }
+.club-logo { width: 112px; height: 112px; border-color: #674053; }
+section {
+  background:
+    repeating-linear-gradient(166deg, transparent 0 89px, #ba7a6705 90px 91px, transparent 92px 179px),
+    radial-gradient(ellipse at 100% 0%, #61374820, transparent 65%),
+    linear-gradient(125deg, #1d1219, #100b11);
+}
+button { background: linear-gradient(110deg, #962c2d, #b64431); }
+button:hover:not(:disabled) { background: #c35336; }
+@media (max-width: 650px) {
+  .club-logo { width: 88px; height: 88px; }
+  .entry-note { display: block; margin-left: 0; }
+  header > .incident-tag { letter-spacing: .8px; }
+}
+@media (forced-colors: active) { h1 span { background: none; filter: none; -webkit-text-fill-color: CanvasText; } }
+@media (max-width: 650px) {
+  h1 { font-size: clamp(36px, 8.8vw, 56px); letter-spacing: -1.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; transform: none; opacity: .35; }
+}

@@ -44,7 +44,11 @@ function createAiService(config, fetchImpl = globalThis.fetch) {
               ]),
               { role: 'user', parts: [{ text: message }] }
             ],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 256, thinkingConfig: { thinkingBudget: 0 } }
+            generationConfig: config.model === 'gemini-3.1-flash-lite'
+              ? { maxOutputTokens: 256 }
+              : /^gemini-[34]/.test(config.model)
+              ? { maxOutputTokens: 1024, thinkingConfig: { thinkingLevel: 'LOW' } }
+              : { temperature: 0.2, maxOutputTokens: 256, thinkingConfig: { thinkingBudget: 0 } }
           })
         });
         if (!response.ok) return scripted(questionId, 'provider_error');
